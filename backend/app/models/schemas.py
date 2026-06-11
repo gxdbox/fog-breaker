@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Dict, List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class CollectionCreate(BaseModel):
@@ -41,12 +41,20 @@ class IntelligenceOut(BaseModel):
     rating: Optional[int] = None
     rating_reason: Optional[str] = None
     summary: Optional[str] = None
+    bullet_summary: Optional[list] = None
+    plain_explanation: Optional[str] = None
+    action_items: Optional[list] = None
     tags: Optional[list] = None
     potential_impact: Optional[str] = None
     is_analyzed: bool
     is_duplicate: bool
+    preference: Optional[int] = None
 
     model_config = {"from_attributes": True}
+
+
+class PreferenceUpdate(BaseModel):
+    preference: Optional[int] = Field(default=None, ge=-1, le=1)
 
 
 class AlertRuleCreate(BaseModel):

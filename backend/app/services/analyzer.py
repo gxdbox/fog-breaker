@@ -26,10 +26,13 @@ class AnalyzerService:
             try:
                 result = self.analyzer.analyze(intel)
                 intel.summary = result["summary"]
+                intel.bullet_summary = result["bullet_summary"]
                 intel.rating = result["rating"]
                 intel.rating_reason = result["rating_reason"]
                 intel.tags = result["tags"]
                 intel.potential_impact = result["potential_impact"]
+                intel.plain_explanation = result["plain_explanation"]
+                intel.action_items = result["action_items"]
                 intel.category = result["category"]
                 intel.is_analyzed = True
                 analyzed_count += 1

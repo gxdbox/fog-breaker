@@ -14,6 +14,7 @@ from app.services.scheduler import start_scheduler
 async def lifespan(app: FastAPI):
     os.makedirs("data", exist_ok=True)
     Base.metadata.create_all(bind=engine)
+    _ensure_schema_columns()
     _seed_default_collections()
     start_scheduler()
     yield
@@ -38,6 +39,20 @@ app.include_router(dashboard.router)
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+def _ensure_schema_columns():
+    required = {
+        "bullet_summary": "JSON",
+        "plain_explanation": "TEXT",
+        "action_items": "JSON",
+        "preference": "INTEGER",
+    }
+    with engine.begin() as conn:
+        columns = {row[1] for row in conn.exec_driver_sql("PRAGMA table_info(intelligences)").fetchall()}
+        for name, column_type in required.items():
+            if name not in columns:
+                conn.exec_driver_sql(f"ALTER TABLE intelligences ADD COLUMN {name} {column_type}")
 
 
 def _seed_default_collections():

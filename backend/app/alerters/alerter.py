@@ -1,5 +1,4 @@
 import logging
-from datetime import datetime
 
 from sqlalchemy.orm import Session
 
@@ -15,6 +14,8 @@ class AlerterService:
     def check_alerts(self, intelligence: Intelligence):
         rules = self.db.query(AlertRule).filter(AlertRule.is_active == True).all()
         for rule in rules:
+            if rule.profile_id is not None and rule.profile_id != intelligence.profile_id:
+                continue
             triggered = False
             message = ""
             if rule.rule_type == "keyword":

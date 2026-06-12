@@ -1,7 +1,7 @@
-import httpx
 from datetime import datetime
 
 from app.collectors.base import BaseCollector, RawIntelligence
+from app.core.http import get_client
 
 
 class WeiboHotCollector(BaseCollector):
@@ -10,11 +10,11 @@ class WeiboHotCollector(BaseCollector):
     def collect(self) -> list[RawIntelligence]:
         results = []
         try:
-            with httpx.Client(timeout=15, follow_redirects=True) as client:
-                resp = client.get(self.API_URL, headers={
-                    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
-                    "Accept": "application/json",
-                })
+            with get_client(timeout=15, extra_headers={
+                "Accept": "application/json",
+                "Referer": "https://weibo.com/",
+            }) as client:
+                resp = client.get(self.API_URL)
                 data = resp.json()
                 realtime = data.get("data", {}).get("realtime", [])
                 for item in realtime[:30]:

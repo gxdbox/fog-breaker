@@ -1,7 +1,7 @@
-import httpx
 from datetime import datetime
 
 from app.collectors.base import BaseCollector, RawIntelligence
+from app.core.http import get_client
 
 
 class HackerNewsCollector(BaseCollector):
@@ -12,7 +12,7 @@ class HackerNewsCollector(BaseCollector):
 
     def collect(self) -> list[RawIntelligence]:
         results = []
-        with httpx.Client(timeout=30) as client:
+        with get_client(timeout=30) as client:
             resp = client.get(f"{self.BASE_URL}/topstories.json")
             story_ids = resp.json()[:self.max_items]
 

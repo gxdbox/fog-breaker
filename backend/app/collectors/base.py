@@ -13,6 +13,7 @@ class RawIntelligence:
     url: Optional[str] = None
     source_name: str = ""
     category: str = "general"
+    language: Optional[str] = None
     published_at: Optional[datetime] = None
 
 

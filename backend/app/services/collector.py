@@ -3,7 +3,13 @@ from datetime import datetime
 
 from sqlalchemy.orm import Session
 
-from app.collectors import RSSCollector, HackerNewsCollector, WeiboHotCollector
+from app.collectors import (
+    CBRRateCollector,
+    HackerNewsCollector,
+    OzonSellerCollector,
+    RSSCollector,
+    WeiboHotCollector,
+)
 from app.models.models import Collection, Intelligence
 from app.services.vector import VectorService
 
@@ -18,11 +24,16 @@ class CollectorService:
     def _get_collector(self, collection: Collection):
         if collection.source_type == "rss":
             url = collection.config.get("url", "")
-            return RSSCollector(name=collection.name, url=url, category=collection.category)
-        elif collection.source_type == "hackernews":
+            language = collection.config.get("language")
+            return RSSCollector(name=collection.name, url=url, category=collection.category, language=language)
+        if collection.source_type == "hackernews":
             return HackerNewsCollector(max_items=collection.config.get("max_items", 30))
-        elif collection.source_type == "weibo":
+        if collection.source_type == "weibo":
             return WeiboHotCollector()
+        if collection.source_type == "cbr_rate":
+            return CBRRateCollector(name=collection.name, currencies=collection.config.get("currencies"))
+        if collection.source_type == "ozon_seller":
+            return OzonSellerCollector(name=collection.name)
         return None
 
     def collect_all(self):
@@ -56,7 +67,9 @@ class CollectorService:
                     url=raw.url,
                     source_name=raw.source_name,
                     collection_id=collection.id,
+                    profile_id=collection.profile_id,
                     category=raw.category,
+                    language=raw.language,
                     published_at=raw.published_at,
                     is_duplicate=True,
                 )
@@ -69,7 +82,9 @@ class CollectorService:
                 url=raw.url,
                 source_name=raw.source_name,
                 collection_id=collection.id,
+                profile_id=collection.profile_id,
                 category=raw.category,
+                language=raw.language,
                 published_at=raw.published_at,
             )
             self.db.add(intel)

@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
+from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -9,8 +11,14 @@ router = APIRouter(prefix="/collections", tags=["collections"])
 
 
 @router.get("/", response_model=list[CollectionOut])
-def list_collections(db: Session = Depends(get_db)):
-    return db.query(Collection).order_by(Collection.created_at.desc()).all()
+def list_collections(
+    profile_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+):
+    q = db.query(Collection)
+    if profile_id is not None:
+        q = q.filter(Collection.profile_id == profile_id)
+    return q.order_by(Collection.created_at.desc()).all()
 
 
 @router.post("/", response_model=CollectionOut)

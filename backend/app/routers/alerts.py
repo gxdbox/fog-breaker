@@ -1,19 +1,24 @@
-from datetime import datetime, timedelta
+from typing import Optional
 
-from fastapi import APIRouter, Depends
-from sqlalchemy import func
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.models.models import AlertLog, AlertRule, Intelligence
-from app.models.schemas import AlertRuleCreate, AlertRuleOut, AlertLogOut, DashboardStats
+from app.models.schemas import AlertRuleCreate, AlertRuleOut, AlertLogOut
 
 router = APIRouter(prefix="/alerts", tags=["alerts"])
 
 
 @router.get("/rules/", response_model=list[AlertRuleOut])
-def list_alert_rules(db: Session = Depends(get_db)):
-    return db.query(AlertRule).order_by(AlertRule.created_at.desc()).all()
+def list_alert_rules(
+    profile_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db),
+):
+    q = db.query(AlertRule)
+    if profile_id is not None:
+        q = q.filter(AlertRule.profile_id == profile_id)
+    return q.order_by(AlertRule.created_at.desc()).all()
 
 
 @router.post("/rules/", response_model=AlertRuleOut)
@@ -27,11 +32,15 @@ def create_alert_rule(data: AlertRuleCreate, db: Session = Depends(get_db)):
 
 @router.get("/logs/", response_model=list[AlertLogOut])
 def list_alert_logs(
+    profile_id: Optional[int] = Query(None),
     skip: int = 0,
     limit: int = 50,
     db: Session = Depends(get_db),
 ):
-    return db.query(AlertLog).order_by(AlertLog.triggered_at.desc()).offset(skip).limit(limit).all()
+    q = db.query(AlertLog)
+    if profile_id is not None:
+        q = q.join(Intelligence, AlertLog.intelligence_id == Intelligence.id).filter(Intelligence.profile_id == profile_id)
+    return q.order_by(AlertLog.triggered_at.desc()).offset(skip).limit(limit).all()
 
 
 @router.patch("/logs/{log_id}/read")

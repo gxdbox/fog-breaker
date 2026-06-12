@@ -11,6 +11,7 @@ class CollectionCreate(BaseModel):
     source_type: str
     config: dict = {}
     category: str = "general"
+    profile_id: Optional[int] = None
     poll_interval_minutes: int = 30
 
 
@@ -20,9 +21,41 @@ class CollectionOut(BaseModel):
     source_type: str
     config: dict
     category: str
+    profile_id: Optional[int] = None
     poll_interval_minutes: int
     is_active: bool
     last_fetched_at: Optional[datetime] = None
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class ProfileCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+    analyzer_prompt: Optional[str] = None
+    briefing_prompt: Optional[str] = None
+    category_schema: Optional[List[dict]] = None
+
+
+class ProfileUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = None
+    analyzer_prompt: Optional[str] = None
+    briefing_prompt: Optional[str] = None
+    category_schema: Optional[List[dict]] = None
+    is_active: Optional[bool] = None
+
+
+class ProfileOut(BaseModel):
+    id: int
+    name: str
+    description: Optional[str] = None
+    analyzer_prompt: Optional[str] = None
+    briefing_prompt: Optional[str] = None
+    category_schema: Optional[list] = None
+    is_active: bool
+    is_default: bool
     created_at: datetime
 
     model_config = {"from_attributes": True}
@@ -35,7 +68,9 @@ class IntelligenceOut(BaseModel):
     url: Optional[str] = None
     source_name: str
     collection_id: Optional[int] = None
+    profile_id: Optional[int] = None
     category: str
+    language: Optional[str] = None
     published_at: Optional[datetime] = None
     collected_at: datetime
     rating: Optional[int] = None
@@ -62,6 +97,7 @@ class AlertRuleCreate(BaseModel):
     rule_type: str = "keyword"
     conditions: dict = {}
     channels: List[str] = []
+    profile_id: Optional[int] = None
 
 
 class AlertRuleOut(BaseModel):
@@ -70,6 +106,7 @@ class AlertRuleOut(BaseModel):
     rule_type: str
     conditions: dict
     channels: list
+    profile_id: Optional[int] = None
     is_active: bool
     created_at: datetime
 

@@ -3,7 +3,7 @@ import logging
 from sqlalchemy.orm import Session
 
 from app.analyzers.deepseek import DeepSeekAnalyzer
-from app.models.models import Intelligence
+from app.models.models import Intelligence, Profile
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +24,12 @@ class AnalyzerService:
         analyzed_count = 0
         for intel in intelligences:
             try:
-                result = self.analyzer.analyze(intel)
+                prompt_template = None
+                if intel.profile_id:
+                    profile = self.db.query(Profile).filter(Profile.id == intel.profile_id).first()
+                    if profile and profile.analyzer_prompt:
+                        prompt_template = profile.analyzer_prompt
+                result = self.analyzer.analyze(intel, prompt_template=prompt_template)
                 intel.summary = result["summary"]
                 intel.bullet_summary = result["bullet_summary"]
                 intel.rating = result["rating"]

@@ -46,6 +46,7 @@ def list_intelligences(
     source_name: Optional[str] = None,
     min_rating: Optional[int] = None,
     is_analyzed: Optional[bool] = None,
+    profile_id: Optional[int] = None,
     personalized: bool = True,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
@@ -60,9 +61,16 @@ def list_intelligences(
         q = q.filter(Intelligence.rating >= min_rating)
     if is_analyzed is not None:
         q = q.filter(Intelligence.is_analyzed == is_analyzed)
+    if profile_id is not None:
+        q = q.filter(Intelligence.profile_id == profile_id)
     if personalized:
-        liked = db.query(Intelligence).filter(Intelligence.preference == 1).all()
-        disliked = db.query(Intelligence).filter(Intelligence.preference == -1).all()
+        liked_q = db.query(Intelligence).filter(Intelligence.preference == 1)
+        disliked_q = db.query(Intelligence).filter(Intelligence.preference == -1)
+        if profile_id is not None:
+            liked_q = liked_q.filter(Intelligence.profile_id == profile_id)
+            disliked_q = disliked_q.filter(Intelligence.profile_id == profile_id)
+        liked = liked_q.all()
+        disliked = disliked_q.all()
         liked_categories = {i.category for i in liked if i.category}
         disliked_categories = {i.category for i in disliked if i.category}
         liked_sources = {i.source_name for i in liked if i.source_name}
@@ -90,15 +98,18 @@ def list_intelligences(
 @router.get("/search", response_model=list[IntelligenceOut])
 def search_intelligences(
     q: str = Query(..., min_length=1),
+    profile_id: Optional[int] = None,
     skip: int = Query(0, ge=0),
-    limit: int = Query(20, ge=1, le=100),
+    limit: int = Query(50, ge=1, le=200),
     db: Session = Depends(get_db),
 ):
-    results = db.query(Intelligence).filter(
+    query = db.query(Intelligence).filter(
         Intelligence.is_duplicate == False,
         (Intelligence.title.contains(q) | Intelligence.content.contains(q)),
-    ).order_by(Intelligence.collected_at.desc()).offset(skip).limit(limit).all()
-    return results
+    )
+    if profile_id is not None:
+        query = query.filter(Intelligence.profile_id == profile_id)
+    return query.order_by(Intelligence.collected_at.desc()).offset(skip).limit(limit).all()
 
 
 @router.patch("/{intelligence_id}/preference", response_model=IntelligenceOut)

@@ -24,6 +24,25 @@ class CategoryType(str, enum.Enum):
     GENERAL = "general"
 
 
+class Profile(Base):
+    __tablename__ = "profiles"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    analyzer_prompt: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    briefing_prompt: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    category_schema: Mapped[Optional[list]] = mapped_column(JSON, nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    is_default: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
+    updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=text("CURRENT_TIMESTAMP"), onupdate=text("CURRENT_TIMESTAMP"))
+
+    collections: Mapped[List["Collection"]] = relationship(back_populates="profile")
+    intelligences: Mapped[List["Intelligence"]] = relationship(back_populates="profile")
+    alert_rules: Mapped[List["AlertRule"]] = relationship(back_populates="profile")
+
+
 class Collection(Base):
     __tablename__ = "collections"
 
@@ -32,12 +51,14 @@ class Collection(Base):
     source_type: Mapped[str] = mapped_column(String(50), nullable=False)
     config: Mapped[dict] = mapped_column(JSON, default=dict)
     category: Mapped[str] = mapped_column(String(50), default=CategoryType.GENERAL)
+    profile_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("profiles.id"), nullable=True)
     poll_interval_minutes: Mapped[int] = mapped_column(Integer, default=30)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     last_fetched_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
     updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=text("CURRENT_TIMESTAMP"), onupdate=text("CURRENT_TIMESTAMP"))
 
+    profile: Mapped[Optional["Profile"]] = relationship(back_populates="collections")
     intelligences: Mapped[List["Intelligence"]] = relationship(back_populates="collection")
 
 
@@ -50,7 +71,9 @@ class Intelligence(Base):
     url: Mapped[Optional[str]] = mapped_column(String(1000), nullable=True)
     source_name: Mapped[str] = mapped_column(String(200), nullable=False)
     collection_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("collections.id"), nullable=True)
+    profile_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("profiles.id"), nullable=True)
     category: Mapped[str] = mapped_column(String(50), default=CategoryType.GENERAL)
+    language: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
     published_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     collected_at: Mapped[datetime] = mapped_column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
 
@@ -67,6 +90,7 @@ class Intelligence(Base):
     preference: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
     collection: Mapped[Optional["Collection"]] = relationship(back_populates="intelligences")
+    profile: Mapped[Optional["Profile"]] = relationship(back_populates="intelligences")
     alerts: Mapped[List["AlertLog"]] = relationship(back_populates="intelligence")
 
 
@@ -78,8 +102,11 @@ class AlertRule(Base):
     rule_type: Mapped[str] = mapped_column(String(50), default="keyword")
     conditions: Mapped[dict] = mapped_column(JSON, default=dict)
     channels: Mapped[list] = mapped_column(JSON, default=list)
+    profile_id: Mapped[Optional[int]] = mapped_column(Integer, ForeignKey("profiles.id"), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=text("CURRENT_TIMESTAMP"))
+
+    profile: Mapped[Optional["Profile"]] = relationship(back_populates="alert_rules")
 
 
 class AlertLog(Base):

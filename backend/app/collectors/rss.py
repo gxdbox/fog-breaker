@@ -1,17 +1,23 @@
 import feedparser
 from datetime import datetime
+from typing import Optional
 
 from app.collectors.base import BaseCollector, RawIntelligence
+from app.core.http import get_client
 
 
 class RSSCollector(BaseCollector):
-    def __init__(self, name: str, url: str, category: str = "general"):
+    def __init__(self, name: str, url: str, category: str = "general", language: Optional[str] = None):
         self.name = name
         self.url = url
         self.category = category
+        self.language = language
 
     def collect(self) -> list[RawIntelligence]:
-        feed = feedparser.parse(self.url)
+        with get_client(timeout=30) as client:
+            resp = client.get(self.url)
+            resp.encoding = resp.charset_encoding or "utf-8"
+            feed = feedparser.parse(resp.text)
         results = []
         for entry in feed.entries:
             content = ""
@@ -34,6 +40,7 @@ class RSSCollector(BaseCollector):
                 url=entry.get("link"),
                 source_name=self.name,
                 category=self.category,
+                language=self.language,
                 published_at=published,
             ))
         return results
